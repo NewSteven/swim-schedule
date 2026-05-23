@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#0077B6">
+    <title>游泳排课表</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.svg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f4f8;
+            color: #333;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #0077B6 0%, #00B4D8 100%);
+            color: white;
+            padding: 14px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 17px;
+            font-weight: 600;
+        }
+        .month-nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .month-nav button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .month-nav span {
+            font-size: 14px;
+            min-width: 120px;
+            text-align: center;
+        }
+        .weekday-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: white;
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 58px;
+            z-index: 90;
+        }
+        .weekday-header div {
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+        }
+        .weekday-header div:nth-child(1),
+        .weekday-header div:nth-child(7) {
+            color: #FF6B6B;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #ddd;
+            padding: 1px;
+        }
+        .day-cell {
+            background: white;
+            min-height: 70px;
+            padding: 4px;
+            cursor: pointer;
+        }
+        .day-cell.other-month {
+            background: #f5f5f5;
+            color: #ccc;
+        }
+        .day-cell.today {
+            background: #FFF3E0;
+        }
+        .day-num {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+        .day-cell.other-month .day-num {
+            color: #aaa;
+        }
+        .day-cell.today .day-num {
+            color: #FF6B6B;
+            font-weight: 700;
+        }
+        .day-cell-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+        .schedule-dot {
+            width: 100%;
+            height: 16px;
+            border-radius: 3px;
+            margin-bottom: 2px;
+            font-size: 8px;
+            padding: 1px 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+        .schedule-dot.more {
+            background: #90CAF9;
+            color: white;
+            justify-content: center;
+            font-size: 8px;
+        }
+        .fab {
+            position: fixed;
+            bottom: 25px;
+            right: 20px;
+            width: 54px;
+            height: 54px;
+            border-radius: 27px;
+            background: linear-gradient(135deg, #0077B6 0%, #00B4D8 100%);
+            color: white;
+            border: none;
+            font-size: 26px;
+            box-shadow: 0 4px 12px rgba(0,119,182,0.4);
+            cursor: pointer;
+            z-index: 50;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .modal-header h2 {
+            font-size: 17px;
+        }
+        .modal-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #999;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #fafafa;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #0077B6;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #0077B6 0%, #00B4D8 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+        .day-schedules-list {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 150;
+            display: none;
+            flex-direction: column;
+        }
+        .day-schedules-list.show {
+            display: flex;
+        }
+        .day-list-header {
+            padding: 16px;
+            background: linear-gradient(135deg, #0077B6 0%, #00B4D8 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .day-list-header h2 {
+            font-size: 16px;
+        }
+        .day-list-header button.back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .add-schedule-btn {
+            width: calc(100% - 32px);
+            margin: 0 16px 16px;
+            padding: 12px;
+            background: #0077B6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .day-list-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .schedule-item {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .schedule-item .time {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0077B6;
+        }
+        .schedule-item .pool {
+            font-size: 14px;
+            margin-top: 4px;
+            color: #333;
+        }
+        .schedule-item .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .schedule-item .actions button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .schedule-item .actions .edit-btn {
+            background: #E3F2FD;
+            color: #0077B6;
+        }
+        .schedule-item .actions .delete-btn {
+            background: #FFEBEE;
+            color: #D32F2F;
+        }
+        .empty-day {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .empty-day .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-row">
+            <h1>🏊 游泳排课表</h1>
+            <div class="month-nav">
+                <button onclick="changeMonth(-1)">‹</button>
+                <span id="currentMonth"></span>
+                <button onclick="changeMonth(1)">›</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="weekday-header">
+        <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+    </div>
+
+    <div class="calendar" id="calendar"></div>
+
+    <button class="fab" onclick="openModal()">+</button>
+
+    <div class="day-schedules-list" id="dayList">
+        <div class="day-list-header">
+            <h2 id="dayListTitle">日程</h2>
+            <button onclick="closeDayList()">×</button>
+        </div>
+        <div class="day-list-content" id="dayListContent"></div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">添加课程</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+
+            <form id="scheduleForm" onsubmit="saveSchedule(event)">
+                <input type="hidden" id="editId">
+                <input type="hidden" id="selectedDate">
+
+                <div class="form-group">
+                    <label>课程名称</label>
+                    <input type="text" id="courseName" placeholder="例如：自由泳训练班" required>
+                </div>
+
+                <div class="form-group">
+                    <label>泳池名称</label>
+                    <input type="text" id="pool" placeholder="手动输入泳池名称" required>
+                </div>
+
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" id="scheduleDate" required onchange="updateWeekday()">
+                    <span id="weekdayText" style="font-size:12px;color:#0077B6;margin-top:4px;display:block;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label>时段</label>
+                    <select id="timeSlot" required>
+                        <option value="">选择时段</option>
+                        <option value="06:00-07:00">06:00-07:00</option>
+                        <option value="07:00-08:00">07:00-08:00</option>
+                        <option value="08:00-09:00">08:00-09:00</option>
+                        <option value="09:00-10:00">09:00-10:00</option>
+                        <option value="10:00-11:00">10:00-11:00</option>
+                        <option value="11:00-12:00">11:00-12:00</option>
+                        <option value="14:00-15:00">14:00-15:00</option>
+                        <option value="15:00-16:00">15:00-16:00</option>
+                        <option value="16:00-17:00">16:00-17:00</option>
+                        <option value="18:00-19:00">18:00-19:00</option>
+                        <option value="19:00-20:00">19:00-20:00</option>
+                        <option value="20:00-21:00">20:00-21:00</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>学员姓名</label>
+                    <input type="text" id="studentName" placeholder="请输入学员姓名" required>
+                </div>
+
+                <div class="form-group">
+                    <label>联系方式</label>
+                    <input type="tel" id="contact" placeholder="手机号或其他联系方式">
+                </div>
+
+                <button type="submit" class="submit-btn">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'swim_schedules_month';
+        let schedules = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        let currentDate = new Date();
+        let selectedDateForAdd = null;
+        const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+        function init() {
+            renderCalendar();
+        }
+
+        function updateWeekday() {
+            const dateVal = document.getElementById('scheduleDate').value;
+            if (dateVal) {
+                const date = new Date(dateVal);
+                const dayOfWeek = date.getDay();
+                document.getElementById('weekdayText').textContent = weekDays[dayOfWeek];
+            }
+        }
+
+        function getMonthName(date) {
+            return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            document.getElementById('currentMonth').textContent = getMonthName(currentDate);
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            let startDayOfWeek = firstDay.getDay();
+
+            const prevMonth = new Date(year, month, 0);
+            const prevDays = prevMonth.getDate();
+
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+
+            let html = '';
+
+            // 上个月的天数
+            for (let i = startDayOfWeek - 1; i >= 0; i--) {
+                const day = prevDays - i;
+                html += `<div class="day-cell other-month"><div class="day-cell-header"><span class="day-num">${day}</span></div></div>`;
+            }
+
+            // 本月天数
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const date = new Date(year, month, day);
+                const dateStr = date.toISOString().split('T')[0];
+                const isToday = dateStr === todayStr;
+
+                const daySchedules = schedules.filter(s => s.date === dateStr);
+                const maxShow = 3;
+                const showSchedules = daySchedules.slice(0, maxShow);
+                const moreCount = daySchedules.length - maxShow;
+
+                let scheduleHtml = '';
+                showSchedules.forEach((s, i) => {
+                    const color = getColorByIndex(i);
+                    scheduleHtml += `<div class="schedule-dot" style="background:${color}">${s.timeSlot}</div><div style="font-size:7px;color:#666;margin-bottom:2px;">${s.pool} · ${s.studentName}</div>`;
+                });
+                if (moreCount > 0) {
+                    scheduleHtml += `<div class="schedule-dot more" onclick="showDayList('${dateStr}')">+${moreCount}节课程</div>`;
+                }
+
+                html += `
+                    <div class="day-cell ${isToday ? 'today' : ''}" onclick="showDayList('${dateStr}')">
+                        <div class="day-cell-header">
+                            <span class="day-num">${day}</span>
+                        </div>
+                        ${scheduleHtml}
+                    </div>
+                `;
+            }
+
+            // 下个月的天数
+            const totalCells = startDayOfWeek + lastDay.getDate();
+            const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let i = 1; i <= remaining; i++) {
+                html += `<div class="day-cell other-month"><div class="day-cell-header"><span class="day-num">${i}</span></div></div>`;
+            }
+
+            document.getElementById('calendar').innerHTML = html;
+        }
+
+        function getColorByIndex(index) {
+            const colors = ['#0077B6', '#00B4D8', '#48CAE4', '#90CAF9', '#0077B6', '#00B4D8'];
+            return colors[index % colors.length];
+        }
+
+        function showDayList(dateStr) {
+            const daySchedules = schedules.filter(s => s.date === dateStr);
+            const date = new Date(dateStr);
+
+            document.getElementById('dayListTitle').textContent = `${date.getMonth() + 1}月${date.getDate()}日`;
+            document.getElementById('selectedDate').value = dateStr;
+            selectedDateForAdd = dateStr;
+
+            const content = document.getElementById('dayListContent');
+
+            let html = `<button class="add-schedule-btn" onclick="openModal()">+ 添加课程</button>`;
+
+            if (daySchedules.length === 0) {
+                html += `
+                    <div class="empty-day">
+                        <div class="icon">🏊</div>
+                        <p>当天无课程</p>
+                    </div>
+                `;
+            } else {
+                html += daySchedules.map((s, i) => `
+                    <div class="schedule-item">
+                        <div class="time">${s.timeSlot}</div>
+                        <div class="pool">${s.courseName} · ${s.pool}</div>
+                        <div style="font-size:13px;color:#666;margin-top:4px;">👤 ${s.studentName} ${s.contact ? '· ' + s.contact : ''}</div>
+                        <div class="actions">
+                            <button class="edit-btn" onclick="editSchedule('${s.id}')">编辑</button>
+                            <button class="delete-btn" onclick="deleteSchedule('${s.id}')">删除</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            content.innerHTML = html;
+            document.getElementById('dayList').classList.add('show');
+        }
+
+        function closeDayList() {
+            document.getElementById('dayList').classList.remove('show');
+        }
+
+        function openModal(editId = null) {
+            const modal = document.getElementById('modal');
+            const form = document.getElementById('scheduleForm');
+            const title = document.getElementById('modalTitle');
+
+            title.textContent = editId ? '编辑课程' : '添加课程';
+            form.reset();
+            document.getElementById('editId').value = editId || '';
+
+            if (editId) {
+                const schedule = schedules.find(s => s.id === editId);
+                if (schedule) {
+                    document.getElementById('courseName').value = schedule.courseName;
+                    document.getElementById('pool').value = schedule.pool;
+                    document.getElementById('scheduleDate').value = schedule.date;
+                    document.getElementById('timeSlot').value = schedule.timeSlot;
+                    document.getElementById('studentName').value = schedule.studentName || '';
+                    document.getElementById('contact').value = schedule.contact || '';
+                    updateWeekday();
+                }
+            } else if (selectedDateForAdd) {
+                document.getElementById('scheduleDate').value = selectedDateForAdd;
+            } else {
+                document.getElementById('scheduleDate').value = new Date().toISOString().split('T')[0];
+            }
+
+            modal.classList.add('show');
+        }
+
+        function openModalForDay(dateStr) {
+            selectedDateForAdd = dateStr;
+            openModal();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+            selectedDateForAdd = null;
+        }
+
+        function saveSchedule(e) {
+            e.preventDefault();
+
+            const schedule = {
+                id: document.getElementById('editId').value || Date.now().toString(),
+                courseName: document.getElementById('courseName').value,
+                pool: document.getElementById('pool').value,
+                date: document.getElementById('scheduleDate').value,
+                timeSlot: document.getElementById('timeSlot').value,
+                studentName: document.getElementById('studentName').value,
+                contact: document.getElementById('contact').value
+            };
+
+            const editId = document.getElementById('editId').value;
+            if (editId) {
+                const index = schedules.findIndex(s => s.id === editId);
+                if (index > -1) schedules[index] = schedule;
+            } else {
+                schedules.push(schedule);
+            }
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
+            closeModal();
+            renderCalendar();
+
+            if (schedule.date) {
+                showDayList(schedule.date);
+            }
+        }
+
+        function editSchedule(id) {
+            closeDayList();
+            setTimeout(() => openModal(id), 300);
+        }
+
+        function deleteSchedule(id) {
+            if (confirm('确定删除？')) {
+                schedules = schedules.filter(s => s.id !== id);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
+
+                closeDayList();
+                renderCalendar();
+            }
+        }
+
+        document.getElementById('modal').onclick = (e) => {
+            if (e.target.id === 'modal') closeModal();
+        };
+
+        init();
+    </script>
+</body>
+</html>
