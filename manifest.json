@@ -2,7 +2,7 @@
   "name": "游泳排课表",
   "short_name": "游泳课表",
   "description": "游泳课程安排表",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0077B6",
