@@ -97,6 +97,23 @@
         .day-cell.today {
             background: #FFF3E0;
         }
+        .day-cell.today .day-num {
+            color: #FF6B6B;
+            font-weight: 700;
+        }
+        .day-cell.today::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 8px;
+            height: 8px;
+            background: #FF6B6B;
+            border-radius: 50%;
+        }
+        .day-cell {
+            position: relative;
+        }
         .day-num {
             font-size: 13px;
             font-weight: 500;
@@ -136,6 +153,7 @@
             font-size: 8px;
         }
         .fab {
+            display: none;
             position: fixed;
             bottom: 25px;
             right: 20px;
