@@ -357,7 +357,7 @@
 
     <div class="calendar" id="calendar"></div>
 
-    <button class="fab" onclick="openModal()">+</button>
+    <button class="fab" onclick="openModalForFresh()">+</button>
 
     <div class="day-schedules-list" id="dayList">
         <div class="day-list-header">
@@ -471,7 +471,10 @@
             const prevDays = prevMonth.getDate();
 
             const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
+            const y = today.getFullYear();
+            const m = String(today.getMonth() + 1).padStart(2, '0');
+            const d = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${y}-${m}-${d}`;
 
             let html = '';
 
@@ -484,7 +487,7 @@
             // 本月天数
             for (let day = 1; day <= lastDay.getDate(); day++) {
                 const date = new Date(year, month, day);
-                const dateStr = date.toISOString().split('T')[0];
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const isToday = dateStr === todayStr;
 
                 const daySchedules = schedules.filter(s => s.date === dateStr);
@@ -528,7 +531,8 @@
 
         function showDayList(dateStr) {
             const daySchedules = schedules.filter(s => s.date === dateStr);
-            const date = new Date(dateStr);
+            const parts = dateStr.split('-');
+            const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
 
             document.getElementById('dayListTitle').textContent = `${date.getMonth() + 1}月${date.getDate()}日`;
             document.getElementById('selectedDate').value = dateStr;
@@ -590,7 +594,7 @@
             } else if (selectedDateForAdd) {
                 document.getElementById('scheduleDate').value = selectedDateForAdd;
             } else {
-                document.getElementById('scheduleDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('scheduleDate').value = getTodayStr();
             }
 
             modal.classList.add('show');
@@ -598,6 +602,16 @@
 
         function openModalForDay(dateStr) {
             selectedDateForAdd = dateStr;
+            openModal();
+        }
+
+        function getTodayStr() {
+            const today = new Date();
+            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        }
+
+        function openModalForFresh() {
+            selectedDateForAdd = getTodayStr();
             openModal();
         }
 
