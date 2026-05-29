@@ -396,22 +396,13 @@
 
                 <div class="form-group">
                     <label>时段</label>
-                    <select id="timeSlot" required>
-                        <option value="">选择时段</option>
-                        <option value="06:00-07:00">06:00-07:00</option>
-                        <option value="07:00-08:00">07:00-08:00</option>
-                        <option value="08:00-09:00">08:00-09:00</option>
-                        <option value="09:00-10:00">09:00-10:00</option>
-                        <option value="10:00-11:00">10:00-11:00</option>
-                        <option value="11:00-12:00">11:00-12:00</option>
-                        <option value="14:00-15:00">14:00-15:00</option>
-                        <option value="15:00-16:00">15:00-16:00</option>
-                        <option value="16:00-17:00">16:00-17:00</option>
-                        <option value="18:00-19:00">18:00-19:00</option>
-                        <option value="19:00-20:00">19:00-20:00</option>
-                        <option value="20:00-21:00">20:00-21:00</option>
-                    </select>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <input type="time" id="timeStart" required>
                 </div>
+
+                <div class="form-group">
+                    <label>结束时间</label>
+                    <input type="time" id="timeEnd" required>
 
                 <div class="form-group">
                     <label>学员姓名</label>
@@ -490,7 +481,11 @@
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const isToday = dateStr === todayStr;
 
-                const daySchedules = schedules.filter(s => s.date === dateStr);
+                const daySchedules = schedules.filter(s => s.date === dateStr).sort((a, b) => {
+                    const timeA = a.timeSlot.split('-')[0].replace(':', '');
+                    const timeB = b.timeSlot.split('-')[0].replace(':', '');
+                    return timeA - timeB;
+                });
                 const maxShow = 3;
                 const showSchedules = daySchedules.slice(0, maxShow);
                 const moreCount = daySchedules.length - maxShow;
@@ -530,7 +525,11 @@
         }
 
         function showDayList(dateStr) {
-            const daySchedules = schedules.filter(s => s.date === dateStr);
+            const daySchedules = schedules.filter(s => s.date === dateStr).sort((a, b) => {
+                    const timeA = a.timeSlot.split('-')[0].replace(':', '');
+                    const timeB = b.timeSlot.split('-')[0].replace(':', '');
+                    return timeA - timeB;
+                });
             const parts = dateStr.split('-');
             const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
 
@@ -583,10 +582,12 @@
             if (editId) {
                 const schedule = schedules.find(s => s.id === editId);
                 if (schedule) {
+                    const times = schedule.timeSlot.split('-');
                     document.getElementById('courseName').value = schedule.courseName;
                     document.getElementById('pool').value = schedule.pool;
                     document.getElementById('scheduleDate').value = schedule.date;
-                    document.getElementById('timeSlot').value = schedule.timeSlot;
+                    document.getElementById('timeStart').value = times[0] || '';
+                    document.getElementById('timeEnd').value = times[1] || '';
                     document.getElementById('studentName').value = schedule.studentName || '';
                     document.getElementById('contact').value = schedule.contact || '';
                     updateWeekday();
@@ -628,7 +629,7 @@
                 courseName: document.getElementById('courseName').value,
                 pool: document.getElementById('pool').value,
                 date: document.getElementById('scheduleDate').value,
-                timeSlot: document.getElementById('timeSlot').value,
+                timeSlot: document.getElementById('timeStart').value + '-' + document.getElementById('timeEnd').value,
                 studentName: document.getElementById('studentName').value,
                 contact: document.getElementById('contact').value
             };
