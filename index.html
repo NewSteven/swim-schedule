@@ -347,7 +347,10 @@
 <body>
     <div class="header">
         <div class="header-row">
-            <h1>🏊 游泳排课表</h1>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <h1>🏊 <span id="appTitleDisplay">游泳排课表</span></h1>
+                <button onclick="editAppTitle()" style="background:none;border:none;color:white;font-size:14px;cursor:pointer;">✏️</button>
+            </div>
             <div class="month-nav">
                 <button onclick="changeMonth(-1)">‹</button>
                 <span id="currentMonth"></span>
@@ -426,13 +429,30 @@
 
     <script>
         const STORAGE_KEY = 'swim_schedules_month';
+        const APP_TITLE_KEY = 'swim_app_title';
         let schedules = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         let currentDate = new Date();
         let selectedDateForAdd = null;
         const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
         function init() {
+            loadAppTitle();
             renderCalendar();
+        }
+
+        function loadAppTitle() {
+            const savedTitle = localStorage.getItem(APP_TITLE_KEY);
+            if (savedTitle) {
+                document.getElementById('appTitleDisplay').textContent = savedTitle;
+            }
+        }
+
+        function editAppTitle() {
+            const newTitle = prompt('请输入显示名称：', document.getElementById('appTitleDisplay').textContent);
+            if (newTitle && newTitle.trim()) {
+                localStorage.setItem(APP_TITLE_KEY, newTitle.trim());
+                document.getElementById('appTitleDisplay').textContent = newTitle.trim();
+            }
         }
 
         function updateWeekday() {
